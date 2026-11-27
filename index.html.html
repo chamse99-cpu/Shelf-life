@@ -263,11 +263,11 @@
 
   .report-pages{ display:flex; flex-direction:column; align-items:center; gap:28px; padding:28px 0 60px; }
   .report-page{
-    width:210mm; min-height:297mm; background:#fff;
+    width:297mm; min-height:210mm; background:#fff;
     box-shadow:0 10px 40px rgba(0,0,0,.35);
     font-family:var(--report-font);
     color:#111; position:relative;
-    padding:18mm 16mm 16mm;
+    padding:14mm 18mm 14mm;
     box-sizing:border-box;
   }
   .report-page .ns-watermark{
@@ -278,7 +278,7 @@
   .report-page.cover{ display:flex; flex-direction:column; }
   .report-page.cover .cover-top{ display:flex; justify-content:flex-end; }
   .report-page.cover .cover-mid{
-    flex:1; display:flex; flex-direction:column; justify-content:center; margin-top:30mm;
+    flex:1; display:flex; flex-direction:column; justify-content:center; margin-top:10mm;
   }
   .report-page.cover .cover-title{ font-size:30px; font-weight:900; color:#111; margin:0; }
   .report-page.cover .cover-divider{
@@ -303,17 +303,17 @@
   .report-bullets b{ font-weight:700; }
   .report-bullets .sub{ padding-left:16px; display:block; color:#333; }
 
-  .report-table-wrap{ display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
-  .report-table{ border-collapse:collapse; font-size:12px; flex:0 0 auto; }
+  .report-table-wrap{ display:flex; gap:24px; align-items:flex-start; flex-wrap:nowrap; }
+  .report-table{ border-collapse:collapse; font-size:12px; flex:0 1 auto; min-width:0; width:auto; }
   .report-table th, .report-table td{
     border:1px solid #cfcfcf; padding:7px 12px; text-align:center;
   }
   .report-table thead th{ background:#f1f1f1; font-weight:700; font-family:var(--report-font); text-transform:none; letter-spacing:normal; }
-  .report-chart{ flex:1; min-width:260px; }
-  .report-chart svg{ width:100%; height:auto; }
+  .report-chart{ flex:1 1 0; min-width:0; }
+  .report-chart svg{ width:100%; height:auto; display:block; }
 
   .report-page .content-footer{
-    position:absolute; left:16mm; right:16mm; bottom:10mm;
+    position:absolute; left:18mm; right:18mm; bottom:8mm;
     display:flex; justify-content:space-between; align-items:center;
     font-size:11px; color:#555;
   }
@@ -325,7 +325,7 @@
     .report-overlay{ position:static; background:none; }
     .report-pages{ padding:0; gap:0; }
     .report-page{ box-shadow:none; page-break-after:always; width:auto; min-height:auto; }
-    @page{ size:A4; margin:0; }
+    @page{ size:A4 landscape; margin:0; }
   }
 </style>
 </head>
