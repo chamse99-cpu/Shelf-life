@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>가속 소비기한 평가 워크벤치</title>
+<title>소비기한 평가 시스템</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -122,6 +122,8 @@
   }
   .segmented button.active{ background:var(--ink); color:#fff; }
   .segmented.small button{padding:7px 6px; font-size:12px;}
+  .segmented.wrap2{flex-wrap:wrap;}
+  .segmented.wrap2 button{flex:1 1 42%; font-size:12px; padding:8px 6px;}
 
   input[type="number"], input[type="text"], input[type="date"], select, textarea{
     width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:7px;
@@ -246,15 +248,15 @@
 <div class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <div class="brand-mark">Q10</div>
+      <div class="brand-mark" style="font-size:22px; line-height:1;">⏱️</div>
       <div class="brand-text">
-        <h1>가속 소비기한 평가 워크벤치</h1>
+        <h1>소비기한 평가 시스템</h1>
         <p>ACCELERATED SHELF-LIFE TESTING &amp; SPEC COMPLIANCE</p>
       </div>
     </div>
     <div class="condition-chip">
       <span class="dot"></span>
-      <span id="chipProduct">유탕면</span>
+      <span id="chipProduct">유탕면(수출)</span>
       <span>·</span>
       <span>Q10 <b id="chipQ10">2.1</b></span>
       <span>·</span>
@@ -280,9 +282,11 @@
 
       <div class="field">
         <label>제품 유형</label>
-        <div class="segmented" id="productToggle">
-          <button data-product="스낵" data-q10="2.0" data-temp="60">스낵</button>
-          <button data-product="유탕면" data-q10="2.1" data-temp="55" class="active">유탕면</button>
+        <div class="segmented wrap2" id="productToggle">
+          <button data-key="export" class="active">유탕면(수출)</button>
+          <button data-key="domestic">유탕면(내수)</button>
+          <button data-key="dried">건면</button>
+          <button data-key="snack">스낵</button>
         </div>
       </div>
 
@@ -300,22 +304,14 @@
       <div class="field">
         <label>상온 기준 온도 (℃)</label>
         <input type="number" id="roomTempInput" step="1" value="25">
-        <div class="hint">두 제품군 공통 기준: 25℃</div>
+        <div class="hint">제품군 공통 기준: 25℃</div>
       </div>
 
       <div class="divider"></div>
 
       <div class="field">
         <label>목표 보증 기간</label>
-        <div class="segmented" id="targetToggle">
-          <button data-months="6">6개월</button>
-          <button data-months="12" class="active">12개월</button>
-          <button data-months="custom">직접입력</button>
-        </div>
-      </div>
-      <div class="field" id="customMonthsField" style="display:none;">
-        <label>목표 보증 기간 (개월, 직접입력)</label>
-        <input type="number" id="customMonthsInput" step="0.5" value="9">
+        <select id="targetMonthsSelect"></select>
       </div>
 
       <div class="field">
@@ -327,10 +323,7 @@
       <div class="row2">
         <div class="field">
           <label>샘플링 회차</label>
-          <div class="segmented small" id="pointsToggle">
-            <button data-points="5" class="active">5회차</button>
-            <button data-points="6">6회차</button>
-          </div>
+          <select id="pointsSelect"></select>
         </div>
         <div class="field">
           <label>시험 시작일</label>
@@ -339,7 +332,7 @@
       </div>
 
       <button class="btn-primary" id="generateBtn">가속 평가 계획 및 샘플링 일정 생성</button>
-      <div class="footnote">Af = Q10 ^((가속온도−상온기준)/10) · 실제상온필요기간 = 목표÷안전계수 · 챔버 총일수 = 실제상온필요기간(일) ÷ Af</div>
+      <div class="footnote">Af = Q10 ^((가속온도−상온기준)/10) · 실제상온필요기간 = 목표÷안전계수 · 저장일수 = 실제상온필요기간(일) ÷ Af</div>
     </div>
   </div>
 
@@ -362,12 +355,12 @@
           <div class="sub" id="statAfFormula">Q10^(ΔT/10)</div>
         </div>
         <div class="stat">
-          <div class="label">실제 상온 필요 기간</div>
+          <div class="label" id="statRealMonthsLabel">소비기한(상온)</div>
           <div class="value" id="statRealMonths">– <span>개월</span></div>
           <div class="sub" id="statRealDays">– 일</div>
         </div>
         <div class="stat">
-          <div class="label">가속챔버 총 필요일수</div>
+          <div class="label">저장일수(가속)</div>
           <div class="value" id="statChamberDays">– <span>일</span></div>
           <div class="sub" id="statChamberEnd">종료 예정일 –</div>
         </div>
@@ -392,7 +385,7 @@
         <table>
           <thead>
             <tr>
-              <th>회차</th><th>경과율</th><th>챔버 경과일 (누적)</th><th>예상 채취일자</th>
+              <th>회차</th><th>저장개월(실온)</th><th>저장일수</th><th>예상 채취일자</th>
             </tr>
           </thead>
           <tbody id="scheduleBody">
@@ -410,63 +403,28 @@
           <h2>평가 기준 관리</h2>
         </div>
       </div>
-      <p class="card-sub">환산점수 = 기준점수(base) − 증분당점수(slope) × (측정값 − 기준시작값 x0). 아래 표를 직접 수정하거나 CSV를 업로드하세요.</p>
+      <p class="card-sub" id="specFormulaHint">환산점수 = 기준점수(base) − 증분당점수(slope) × (측정값 − 기준시작값 x0). 아래 표를 직접 수정하거나 CSV를 업로드하세요.</p>
 
       <div class="table-scroll">
         <table class="spec-table">
-          <thead>
-            <tr>
-              <th style="text-align:left;">지표</th><th>합격기준(Spec)</th><th>환산기준 base</th><th>기준시작값 x0</th><th>증분당점수 slope</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="spec-name">관능평가 (9점 척도)</td>
-              <td><input type="number" id="specSensoryLimit" value="5" step="0.1"></td>
-              <td><input type="number" id="specSensoryBase" value="110" step="1"></td>
-              <td><input type="number" id="specSensoryX0" value="1" step="0.1"></td>
-              <td><input type="number" id="specSensorySlope" value="5" step="0.1"></td>
-            </tr>
-            <tr>
-              <td class="spec-name">Hexanal (ppb)</td>
-              <td><input type="number" id="specHexLimit" value="400" step="1"></td>
-              <td><input type="number" id="specHexBase" value="110" step="1"></td>
-              <td><input type="number" id="specHexX0" value="150" step="1"></td>
-              <td><input type="number" id="specHexSlope" value="0.1" step="0.01"></td>
-            </tr>
-            <tr>
-              <td class="spec-name">과산화물가 POV (meq/kg)</td>
-              <td><input type="number" id="specPovLimit" value="45" step="1"></td>
-              <td><input type="number" id="specPovBase" value="110" step="1"></td>
-              <td><input type="number" id="specPovX0" value="20" step="1"></td>
-              <td><input type="number" id="specPovSlope" value="1" step="0.1"></td>
-            </tr>
-          </tbody>
+          <thead id="specTableHead"></thead>
+          <tbody id="specTableBody"></tbody>
         </table>
       </div>
 
-      <div class="row2" style="margin-top:14px;">
-        <div class="field" style="margin-bottom:0;">
-          <label>종합 판정 기준 – 총점 합격선</label>
-          <input type="number" id="specTotalThreshold" value="260" step="1">
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>종합 판정 로직</label>
-          <input type="text" value="관능 ≤ 기준 AND 총점 ≥ 합격선" disabled style="background:var(--surface-2); color:var(--ink-soft);">
-        </div>
-      </div>
+      <div id="specThresholdArea"></div>
 
       <div class="dropzone" id="dropzone">
         <p class="main">평가 기준 CSV 업로드</p>
-        <p>클릭하거나 파일을 끌어다 놓으세요 · 지표,합격기준,base,x0,slope 형식</p>
+        <p>클릭하거나 파일을 끌어다 놓으세요 · 지표,합격기준(,base,x0,slope) 형식 — 제품에 따라 열이 다릅니다</p>
       </div>
       <input type="file" id="fileInput" accept=".csv,.txt" style="display:none;">
 
       <div class="spec-actions">
         <button class="btn-ghost" id="downloadTemplateBtn">기준 템플릿 CSV 다운로드</button>
-        <button class="btn-ghost" id="resetSpecBtn">유탕면 기본값으로 초기화</button>
+        <button class="btn-ghost" id="resetSpecBtn">기본값으로 초기화</button>
       </div>
-      <div class="spec-status"><span class="dot"></span><span id="specStatusText">기본 템플릿 값 사용 중 (유탕면 실측 계산식 기준) — 스낵 적용 시 실제 데이터로 수정하세요.</span></div>
+      <div class="spec-status"><span class="dot"></span><span id="specStatusText">기본 템플릿 값 사용 중</span></div>
     </div>
 
     <!-- Section 4: Sampling & judgment -->
@@ -477,28 +435,13 @@
           <h2>샘플링별 측정 &amp; 판정</h2>
         </div>
       </div>
-      <p class="card-sub">회차별로 측정값을 입력하면 환산점수와 합격 여부가 자동 계산됩니다.</p>
+      <p class="card-sub">회차별로 측정값을 입력하면 환산점수(또는 기준 비교)와 합격 여부가 자동 계산됩니다.</p>
 
       <div class="table-scroll">
         <table id="measureTable">
-          <thead>
-            <tr>
-              <th rowspan="2">회차</th>
-              <th rowspan="2">채취일자</th>
-              <th colspan="2" class="th-group">관능평가</th>
-              <th colspan="2" class="th-group">Hexanal (ppb)</th>
-              <th colspan="2" class="th-group">과산화물가 (meq/kg)</th>
-              <th rowspan="2">총점</th>
-              <th rowspan="2">판정</th>
-            </tr>
-            <tr>
-              <th>측정값</th><th>환산점수</th>
-              <th>측정값</th><th>환산점수</th>
-              <th>측정값</th><th>환산점수</th>
-            </tr>
-          </thead>
+          <thead id="measureHead"></thead>
           <tbody id="measureBody">
-            <tr><td colspan="10" class="cell-muted">계획을 생성하면 측정 입력란이 표시됩니다.</td></tr>
+            <tr><td colspan="12" class="cell-muted">계획을 생성하면 측정 입력란이 표시됩니다.</td></tr>
           </tbody>
         </table>
       </div>
@@ -514,7 +457,7 @@
           <div><div class="n" id="countPending">0</div><div class="l">Pending</div></div>
         </div>
       </div>
-      <div class="footnote">기준 출처: 사내 유탕면 종합 평가 점수 계산식(관능 5점 이하 &amp; 총점 260점 이상). 스낵 등 타 제품은 자체 기준으로 반드시 검증 후 사용하십시오.</div>
+      <div class="footnote" id="measureFootnote">기준 출처: 사내 평가 기준. 실제 적용 전 자체 데이터로 반드시 검증 후 사용하십시오.</div>
     </div>
 
   </div>
@@ -524,16 +467,68 @@
 (function(){
   "use strict";
 
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---------------- Metric metadata ----------------
+  var METRIC_META = {
+    sensory:{ label:'관능평가 (9점 척도)', shortLabel:'관능평가', unit:'점', placeholder:'점', csvMatch:/관능/ },
+    hexanal:{ label:'Hexanal (ppb)', shortLabel:'Hexanal', unit:'ppb', placeholder:'ppb', csvMatch:/hexanal/i },
+    pov:{ label:'과산화물가 POV (meq/kg)', shortLabel:'POV', unit:'meq/kg', placeholder:'meq/kg', csvMatch:/과산화|pov/i }
+  };
+
+  // ---------------- Product catalog ----------------
+  var PRODUCTS = {
+    export:{
+      key:'export', label:'유탕면(수출)', q10:2.1, accelTemp:55,
+      metrics:['sensory','hexanal','pov'], scoring:'score',
+      spec:{
+        sensory:{limit:5, base:110, x0:1, slope:5},
+        hexanal:{limit:400, base:110, x0:150, slope:0.1},
+        pov:{limit:45, base:110, x0:20, slope:1},
+        totalThreshold:260
+      }
+    },
+    domestic:{
+      key:'domestic', label:'유탕면(내수)', q10:2.1, accelTemp:55,
+      metrics:['sensory','pov'], scoring:'direct',
+      spec:{
+        sensory:{limit:5},
+        pov:{limit:30}
+      }
+    },
+    dried:{
+      key:'dried', label:'건면', q10:2.61, accelTemp:50,
+      metrics:['sensory','hexanal'], scoring:'direct',
+      spec:{
+        sensory:{limit:5},
+        hexanal:{limit:100}
+      }
+    },
+    snack:{
+      key:'snack', label:'스낵', q10:2.0, accelTemp:60,
+      metrics:['sensory','pov'], scoring:'direct',
+      spec:{
+        sensory:{limit:5},
+        pov:{limit:40}
+      }
+    }
+  };
+  var PRODUCT_ORDER = ['export','domestic','dried','snack'];
+
+  function cloneSpec(spec){ return JSON.parse(JSON.stringify(spec)); }
+
   // ---------------- State ----------------
   var state = {
-    product:"유탕면", q10:2.1, accelTemp:55, roomTemp:25,
+    productKey:'export', q10:2.1, accelTemp:55, roomTemp:25,
     targetMonths:12, safetyFactor:0.8, points:5,
     startDate:null,
     plan:null,
-    spec:null
+    specByProduct:{}
   };
+  PRODUCT_ORDER.forEach(function(k){ state.specByProduct[k] = cloneSpec(PRODUCTS[k].spec); });
 
-  var $ = function(id){ return document.getElementById(id); };
+  function getProduct(){ return PRODUCTS[state.productKey]; }
+  function getSpec(){ return state.specByProduct[state.productKey]; }
 
   // ---------------- Init defaults ----------------
   (function initDate(){
@@ -543,125 +538,64 @@
     state.startDate = iso;
   })();
 
-  function defaultSpec(){
-    return {
-      sensory:{limit:5, base:110, x0:1, slope:5},
-      hexanal:{limit:400, base:110, x0:150, slope:0.1},
-      pov:{limit:45, base:110, x0:20, slope:1},
-      totalThreshold:260
-    };
-  }
-  state.spec = defaultSpec();
-
-  function syncSpecInputsFromState(){
-    $('specSensoryLimit').value = state.spec.sensory.limit;
-    $('specSensoryBase').value = state.spec.sensory.base;
-    $('specSensoryX0').value = state.spec.sensory.x0;
-    $('specSensorySlope').value = state.spec.sensory.slope;
-    $('specHexLimit').value = state.spec.hexanal.limit;
-    $('specHexBase').value = state.spec.hexanal.base;
-    $('specHexX0').value = state.spec.hexanal.x0;
-    $('specHexSlope').value = state.spec.hexanal.slope;
-    $('specPovLimit').value = state.spec.pov.limit;
-    $('specPovBase').value = state.spec.pov.base;
-    $('specPovX0').value = state.spec.pov.x0;
-    $('specPovSlope').value = state.spec.pov.slope;
-    $('specTotalThreshold').value = state.spec.totalThreshold;
-  }
-
-  function readSpecFromInputs(){
-    state.spec = {
-      sensory:{
-        limit: parseFloat($('specSensoryLimit').value)||0,
-        base: parseFloat($('specSensoryBase').value)||0,
-        x0: parseFloat($('specSensoryX0').value)||0,
-        slope: parseFloat($('specSensorySlope').value)||0
-      },
-      hexanal:{
-        limit: parseFloat($('specHexLimit').value)||0,
-        base: parseFloat($('specHexBase').value)||0,
-        x0: parseFloat($('specHexX0').value)||0,
-        slope: parseFloat($('specHexSlope').value)||0
-      },
-      pov:{
-        limit: parseFloat($('specPovLimit').value)||0,
-        base: parseFloat($('specPovBase').value)||0,
-        x0: parseFloat($('specPovX0').value)||0,
-        slope: parseFloat($('specPovSlope').value)||0
-      },
-      totalThreshold: parseFloat($('specTotalThreshold').value)||0
-    };
-  }
-
-  ['specSensoryLimit','specSensoryBase','specSensoryX0','specSensorySlope',
-   'specHexLimit','specHexBase','specHexX0','specHexSlope',
-   'specPovLimit','specPovBase','specPovX0','specPovSlope','specTotalThreshold'].forEach(function(id){
-    $(id).addEventListener('input', function(){
-      readSpecFromInputs();
-      $('specStatusText').textContent = "사용자 수정 기준 적용 중";
-      recomputeMeasureTable();
-    });
-  });
-
-  $('resetSpecBtn').addEventListener('click', function(){
-    state.spec = defaultSpec();
-    syncSpecInputsFromState();
-    $('specStatusText').textContent = "기본 템플릿 값으로 초기화됨 (유탕면 실측 계산식 기준)";
-    recomputeMeasureTable();
-  });
-
-  // ---------------- Product / target / points toggles ----------------
-  function setActive(container, selector, matchFn){
+  // ---------------- Shared toggle helper ----------------
+  function setActive(container, matchFn){
     Array.prototype.forEach.call(container.querySelectorAll('button'), function(btn){
       btn.classList.toggle('active', matchFn(btn));
     });
   }
 
+  // ---------------- Product toggle ----------------
   $('productToggle').addEventListener('click', function(e){
     var btn = e.target.closest('button');
     if(!btn) return;
-    state.product = btn.getAttribute('data-product');
-    state.q10 = parseFloat(btn.getAttribute('data-q10'));
-    state.accelTemp = parseFloat(btn.getAttribute('data-temp'));
+    var key = btn.getAttribute('data-key');
+    if(key === state.productKey) return;
+    state.productKey = key;
+    var product = getProduct();
+    state.q10 = product.q10;
+    state.accelTemp = product.accelTemp;
     $('q10Input').value = state.q10;
     $('accelTempInput').value = state.accelTemp;
-    setActive($('productToggle'), null, function(b){ return b===btn; });
+    setActive($('productToggle'), function(b){ return b===btn; });
     updateChip();
+    renderSpecTable();
+    if(state.plan){ renderMeasureTable(state.plan); }
   });
 
   $('q10Input').addEventListener('input', function(){ state.q10 = parseFloat(this.value)||0; updateChip(); });
   $('accelTempInput').addEventListener('input', function(){ state.accelTemp = parseFloat(this.value)||0; updateChip(); });
   $('roomTempInput').addEventListener('input', function(){ state.roomTemp = parseFloat(this.value)||0; updateChip(); });
 
-  $('targetToggle').addEventListener('click', function(e){
-    var btn = e.target.closest('button');
-    if(!btn) return;
-    setActive($('targetToggle'), null, function(b){ return b===btn; });
-    var m = btn.getAttribute('data-months');
-    if(m === 'custom'){
-      $('customMonthsField').style.display = 'block';
-      state.targetMonths = parseFloat($('customMonthsInput').value)||9;
-    } else {
-      $('customMonthsField').style.display = 'none';
-      state.targetMonths = parseFloat(m);
+  (function initTargetMonthsSelect(){
+    var sel = $('targetMonthsSelect');
+    var optionsHtml = '';
+    for(var n=1; n<=24; n++){
+      optionsHtml += '<option value="'+n+'"'+(n===state.targetMonths?' selected':'')+'>'+n+'개월</option>';
     }
-  });
-  $('customMonthsInput').addEventListener('input', function(){
+    sel.innerHTML = optionsHtml;
+  })();
+  $('targetMonthsSelect').addEventListener('change', function(){
     state.targetMonths = parseFloat(this.value)||0;
   });
   $('safetyFactorInput').addEventListener('input', function(){
     state.safetyFactor = parseFloat(this.value)||0.8;
   });
-  $('pointsToggle').addEventListener('click', function(e){
-    var btn = e.target.closest('button');
-    if(!btn) return;
-    setActive($('pointsToggle'), null, function(b){ return b===btn; });
-    state.points = parseInt(btn.getAttribute('data-points'),10);
+  (function initPointsSelect(){
+    var sel = $('pointsSelect');
+    var optionsHtml = '';
+    for(var n=2; n<=10; n++){
+      optionsHtml += '<option value="'+n+'"'+(n===state.points?' selected':'')+'>'+n+'회차</option>';
+    }
+    sel.innerHTML = optionsHtml;
+  })();
+  $('pointsSelect').addEventListener('change', function(){
+    state.points = parseInt(this.value,10);
   });
   $('startDateInput').addEventListener('input', function(){ state.startDate = this.value; });
 
   function updateChip(){
-    $('chipProduct').textContent = state.product;
+    $('chipProduct').textContent = getProduct().label;
     $('chipQ10').textContent = state.q10;
     $('chipTemp').textContent = state.accelTemp;
     $('chipRoom').textContent = state.roomTemp;
@@ -676,7 +610,9 @@
     var af = Math.pow(state.q10, (state.accelTemp - state.roomTemp)/10);
     var chamberDays = af > 0 ? realDays / af : 0;
 
-    var fractions = state.points === 6 ? [0,0.2,0.4,0.6,0.8,1.0] : [0,0.25,0.5,0.75,1.0];
+    var n = state.points >= 2 ? state.points : 5;
+    var fractions = [];
+    for(var i=0; i<n; i++){ fractions.push(i/(n-1)); }
     var start = state.startDate ? new Date(state.startDate+'T00:00:00') : new Date();
 
     var rows = fractions.map(function(f, idx){
@@ -686,6 +622,7 @@
       return {
         index: idx+1,
         fraction: f,
+        roomMonths: f * realMonths,
         day: day,
         date: d
       };
@@ -731,90 +668,211 @@
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td class="cell-strong">'+r.index+'</td>'+
-        '<td>'+Math.round(r.fraction*100)+'%</td>'+
+        '<td>'+fmt(r.roomMonths,1)+'개월</td>'+
         '<td class="cell-strong">'+r.day+'일</td>'+
         '<td>'+fmtDate(r.date)+'</td>';
       body.appendChild(tr);
     });
   }
 
-  // ---------------- Measurement table ----------------
-  var measureValues = {}; // rowIndex -> {sensory, hex, pov}
+  // ---------------- Spec table (Step 3) ----------------
+  function renderSpecTable(){
+    var product = getProduct();
+    var spec = getSpec();
+
+    $('specTableHead').innerHTML = product.scoring === 'score'
+      ? '<tr><th style="text-align:left;">지표</th><th>합격기준(Spec)</th><th>환산기준 base</th><th>기준시작값 x0</th><th>증분당점수 slope</th></tr>'
+      : '<tr><th style="text-align:left;">지표</th><th>합격기준(Spec)</th></tr>';
+
+    var rowsHtml = product.metrics.map(function(m){
+      var meta = METRIC_META[m];
+      var s = spec[m];
+      if(product.scoring === 'score'){
+        return '<tr data-metric="'+m+'">'+
+          '<td class="spec-name">'+meta.label+'</td>'+
+          '<td><input type="number" step="0.1" data-metric="'+m+'" data-field="limit" value="'+s.limit+'"></td>'+
+          '<td><input type="number" step="1" data-metric="'+m+'" data-field="base" value="'+s.base+'"></td>'+
+          '<td><input type="number" step="0.1" data-metric="'+m+'" data-field="x0" value="'+s.x0+'"></td>'+
+          '<td><input type="number" step="0.01" data-metric="'+m+'" data-field="slope" value="'+s.slope+'"></td>'+
+        '</tr>';
+      }
+      return '<tr data-metric="'+m+'">'+
+        '<td class="spec-name">'+meta.label+'</td>'+
+        '<td><input type="number" step="0.1" data-metric="'+m+'" data-field="limit" value="'+s.limit+'"></td>'+
+      '</tr>';
+    }).join('');
+    $('specTableBody').innerHTML = rowsHtml;
+
+    var area = $('specThresholdArea');
+    if(product.scoring === 'score'){
+      area.innerHTML =
+        '<div class="row2" style="margin-top:14px;">'+
+          '<div class="field" style="margin-bottom:0;">'+
+            '<label>종합 판정 기준 – 총점 합격선</label>'+
+            '<input type="number" id="specTotalThreshold" value="'+spec.totalThreshold+'" step="1">'+
+          '</div>'+
+          '<div class="field" style="margin-bottom:0;">'+
+            '<label>종합 판정 로직</label>'+
+            '<input type="text" value="관능 ≤ 기준 AND 총점 ≥ 합격선" disabled style="background:var(--surface-2); color:var(--ink-soft);">'+
+          '</div>'+
+        '</div>';
+      $('specTotalThreshold').addEventListener('input', function(){
+        getSpec().totalThreshold = parseFloat(this.value)||0;
+        $('specStatusText').textContent = '사용자 수정 기준 적용 중';
+        recomputeMeasureTable();
+      });
+    } else {
+      var secondMetric = product.metrics.filter(function(m){ return m!=='sensory'; })[0];
+      var secondLabel = secondMetric ? METRIC_META[secondMetric].shortLabel : '';
+      area.innerHTML =
+        '<div class="field" style="margin-bottom:0;">'+
+          '<label>종합 판정 로직</label>'+
+          '<input type="text" value="관능 ≤ 기준 AND '+secondLabel+' ≤ 기준" disabled style="background:var(--surface-2); color:var(--ink-soft);">'+
+        '</div>';
+    }
+
+    $('specFormulaHint').textContent = product.scoring === 'score'
+      ? '환산점수 = 기준점수(base) − 증분당점수(slope) × (측정값 − 기준시작값 x0). 아래 표를 직접 수정하거나 CSV를 업로드하세요.'
+      : '각 지표의 측정값을 합격기준과 직접 비교하여 판정합니다 (환산점수 없음). 아래 표를 직접 수정하거나 CSV를 업로드하세요.';
+
+    $('resetSpecBtn').textContent = product.label + ' 기본값으로 초기화';
+    $('specStatusText').textContent = product.label + ' 기본 템플릿 값 사용 중';
+  }
+
+  $('specTableBody').addEventListener('input', function(e){
+    var inp = e.target;
+    if(inp.tagName !== 'INPUT') return;
+    var metric = inp.getAttribute('data-metric');
+    var field = inp.getAttribute('data-field');
+    getSpec()[metric][field] = parseFloat(inp.value)||0;
+    $('specStatusText').textContent = '사용자 수정 기준 적용 중';
+    recomputeMeasureTable();
+  });
+
+  $('resetSpecBtn').addEventListener('click', function(){
+    var product = getProduct();
+    state.specByProduct[product.key] = cloneSpec(product.spec);
+    renderSpecTable();
+    recomputeMeasureTable();
+  });
+
+  // ---------------- Measurement table (Step 4) ----------------
+  var measureValues = {}; // rowIndex -> {metricKey: value}
 
   function convScore(spec, value){
     if(value === null || value === undefined || value === '' || isNaN(value)) return null;
     return spec.base - spec.slope*(value - spec.x0);
   }
 
+  function renderMeasureTableHeader(product){
+    var head = $('measureHead');
+    if(product.scoring === 'score'){
+      var row1 = '<th rowspan="2">회차</th><th rowspan="2">채취일자</th>' +
+        product.metrics.map(function(m){ return '<th colspan="2" class="th-group">'+METRIC_META[m].label+'</th>'; }).join('') +
+        '<th rowspan="2">총점</th><th rowspan="2">판정</th>';
+      var row2 = product.metrics.map(function(){ return '<th>측정값</th><th>환산점수</th>'; }).join('');
+      head.innerHTML = '<tr>'+row1+'</tr><tr>'+row2+'</tr>';
+    } else {
+      var row = '<th>회차</th><th>채취일자</th>' +
+        product.metrics.map(function(m){ return '<th>'+METRIC_META[m].label+'<br>측정값</th>'; }).join('') +
+        '<th>판정</th>';
+      head.innerHTML = '<tr>'+row+'</tr>';
+    }
+  }
+
   function renderMeasureTable(plan){
+    var product = getProduct();
+    renderMeasureTableHeader(product);
     var body = $('measureBody');
     body.innerHTML = '';
     measureValues = {};
+
     plan.rows.forEach(function(r){
-      measureValues[r.index] = {sensory:'', hex:'', pov:''};
+      var vals = {};
+      product.metrics.forEach(function(m){ vals[m] = ''; });
+      measureValues[r.index] = vals;
+
+      var cells = '<td class="cell-strong">'+r.index+'</td>'+
+        '<td class="cell-muted">'+fmtDate(r.date)+'</td>';
+      if(product.scoring === 'score'){
+        product.metrics.forEach(function(m){
+          cells += '<td><input type="number" step="0.1" data-field="'+m+'" data-row="'+r.index+'" placeholder="'+METRIC_META[m].placeholder+'"></td>'+
+                   '<td class="conv-'+m+' cell-muted">–</td>';
+        });
+        cells += '<td class="total-score cell-strong">–</td>';
+      } else {
+        product.metrics.forEach(function(m){
+          cells += '<td><input type="number" step="0.1" data-field="'+m+'" data-row="'+r.index+'" placeholder="'+METRIC_META[m].placeholder+'"></td>';
+        });
+      }
+      cells += '<td class="judge-cell"><span class="badge pending">대기</span></td>';
+
       var tr = document.createElement('tr');
       tr.setAttribute('data-row', r.index);
-      tr.innerHTML =
-        '<td class="cell-strong">'+r.index+'</td>'+
-        '<td class="cell-muted">'+fmtDate(r.date)+'</td>'+
-        '<td><input type="number" step="0.1" data-field="sensory" data-row="'+r.index+'" placeholder="점"></td>'+
-        '<td class="conv-sensory cell-muted">–</td>'+
-        '<td><input type="number" step="0.1" data-field="hex" data-row="'+r.index+'" placeholder="ppb"></td>'+
-        '<td class="conv-hex cell-muted">–</td>'+
-        '<td><input type="number" step="0.1" data-field="pov" data-row="'+r.index+'" placeholder="meq/kg"></td>'+
-        '<td class="conv-pov cell-muted">–</td>'+
-        '<td class="total-score cell-strong">–</td>'+
-        '<td class="judge-cell"><span class="badge pending">대기</span></td>';
+      tr.innerHTML = cells;
       body.appendChild(tr);
-    });
-
-    Array.prototype.forEach.call(body.querySelectorAll('input'), function(inp){
-      inp.addEventListener('input', function(){
-        var row = this.getAttribute('data-row');
-        var field = this.getAttribute('data-field');
-        measureValues[row][field] = this.value === '' ? '' : parseFloat(this.value);
-        recomputeRow(row);
-        recomputeVerdictSummary();
-      });
     });
 
     recomputeMeasureTable();
   }
 
+  $('measureBody').addEventListener('input', function(e){
+    var inp = e.target;
+    if(inp.tagName !== 'INPUT') return;
+    var row = inp.getAttribute('data-row');
+    var field = inp.getAttribute('data-field');
+    measureValues[row][field] = inp.value === '' ? '' : parseFloat(inp.value);
+    recomputeRow(row);
+    recomputeVerdictSummary();
+  });
+
   function recomputeRow(rowIndex){
+    var product = getProduct();
+    var spec = getSpec();
     var vals = measureValues[rowIndex];
     if(!vals) return;
     var tr = document.querySelector('#measureBody tr[data-row="'+rowIndex+'"]');
     if(!tr) return;
-
-    var sSensory = convScore(state.spec.sensory, vals.sensory);
-    var sHex = convScore(state.spec.hexanal, vals.hex);
-    var sPov = convScore(state.spec.pov, vals.pov);
-
-    tr.querySelector('.conv-sensory').textContent = sSensory===null ? '–' : fmt(sSensory,1);
-    tr.querySelector('.conv-hex').textContent = sHex===null ? '–' : fmt(sHex,1);
-    tr.querySelector('.conv-pov').textContent = sPov===null ? '–' : fmt(sPov,1);
-
     var judgeCell = tr.querySelector('.judge-cell');
-    var totalCell = tr.querySelector('.total-score');
 
-    if(sSensory===null || sHex===null || sPov===null){
-      totalCell.textContent = '–';
-      judgeCell.innerHTML = '<span class="badge pending">대기</span>';
-      tr.setAttribute('data-status','pending');
-      return;
-    }
+    if(product.scoring === 'score'){
+      var scores = {};
+      var anyMissing = false;
+      product.metrics.forEach(function(m){
+        var s = convScore(spec[m], vals[m]);
+        scores[m] = s;
+        if(s === null) anyMissing = true;
+        var cell = tr.querySelector('.conv-'+m);
+        if(cell) cell.textContent = s===null ? '–' : fmt(s,1);
+      });
+      var totalCell = tr.querySelector('.total-score');
 
-    var total = sSensory + sHex + sPov;
-    totalCell.textContent = fmt(total,1);
+      if(anyMissing){
+        totalCell.textContent = '–';
+        judgeCell.innerHTML = '<span class="badge pending">대기</span>';
+        tr.setAttribute('data-status','pending');
+        return;
+      }
 
-    var pass = (vals.sensory <= state.spec.sensory.limit) && (total >= state.spec.totalThreshold);
-    if(pass){
-      judgeCell.innerHTML = '<span class="badge pass">PASS</span>';
-      tr.setAttribute('data-status','pass');
+      var total = product.metrics.reduce(function(sum,m){ return sum + scores[m]; }, 0);
+      totalCell.textContent = fmt(total,1);
+
+      var pass = (vals.sensory <= spec.sensory.limit) && (total >= spec.totalThreshold);
+      judgeCell.innerHTML = pass ? '<span class="badge pass">PASS</span>' : '<span class="badge fail">FAIL</span>';
+      tr.setAttribute('data-status', pass ? 'pass' : 'fail');
     } else {
-      judgeCell.innerHTML = '<span class="badge fail">FAIL</span>';
-      tr.setAttribute('data-status','fail');
+      var anyMissing2 = product.metrics.some(function(m){
+        var v = vals[m];
+        return v===''||v===undefined||v===null||isNaN(v);
+      });
+      if(anyMissing2){
+        judgeCell.innerHTML = '<span class="badge pending">대기</span>';
+        tr.setAttribute('data-status','pending');
+        return;
+      }
+      var pass2 = product.metrics.every(function(m){ return vals[m] <= spec[m].limit; });
+      judgeCell.innerHTML = pass2 ? '<span class="badge pass">PASS</span>' : '<span class="badge fail">FAIL</span>';
+      tr.setAttribute('data-status', pass2 ? 'pass' : 'fail');
     }
   }
 
@@ -823,9 +881,12 @@
       recomputeRow(rowIndex);
     });
     recomputeVerdictSummary();
+    updateFootnote();
   }
 
   function recomputeVerdictSummary(){
+    var product = getProduct();
+    var spec = getSpec();
     var rows = document.querySelectorAll('#measureBody tr[data-row]');
     if(!rows.length){ $('verdictBox').style.display='none'; return; }
     var pass=0, fail=0, pending=0;
@@ -842,13 +903,17 @@
 
     var box = $('verdictBox');
     box.classList.remove('pass','fail');
+    var critText = product.scoring==='score'
+      ? ('관능 ≤ '+spec.sensory.limit+' & 총점 ≥ '+spec.totalThreshold)
+      : product.metrics.map(function(m){ return METRIC_META[m].shortLabel+' ≤ '+spec[m].limit; }).join(' & ');
+
     if(pending === rows.length){
       $('verdictTitle').textContent = '측정 대기 중';
       $('verdictSub').textContent = '회차별 측정값을 입력하면 종합 판정이 표시됩니다.';
     } else if(fail === 0 && pending === 0){
       box.classList.add('pass');
       $('verdictTitle').textContent = '종합 판정: 유통기한 품질 만족';
-      $('verdictSub').textContent = '전체 '+rows.length+'회차 모두 관능 ≤ '+state.spec.sensory.limit+' & 총점 ≥ '+state.spec.totalThreshold+' 충족';
+      $('verdictSub').textContent = '전체 '+rows.length+'회차 모두 '+critText+' 충족';
     } else if(fail > 0){
       box.classList.add('fail');
       $('verdictTitle').textContent = '종합 판정: 유통기한 품질 불만족';
@@ -859,6 +924,15 @@
     }
   }
 
+  function updateFootnote(){
+    var product = getProduct();
+    var spec = getSpec();
+    var critText = product.scoring==='score'
+      ? ('관능 '+spec.sensory.limit+'점 이하 & 환산점수 총점 '+spec.totalThreshold+'점 이상')
+      : product.metrics.map(function(m){ return METRIC_META[m].shortLabel+' '+spec[m].limit+' 이하'; }).join(' & ');
+    $('measureFootnote').textContent = '기준 출처: ' + product.label + ' 평가 기준 (' + critText + '). 실제 적용 전 사내 데이터로 반드시 검증 후 사용하십시오.';
+  }
+
   // ---------------- Generate button ----------------
   $('generateBtn').addEventListener('click', function(){
     state.plan = calcPlan();
@@ -867,22 +941,38 @@
   });
 
   // trigger once initially with defaults for immediate usability
+  renderSpecTable();
   updateChip();
   state.plan = calcPlan();
   renderPlan(state.plan);
   renderMeasureTable(state.plan);
 
   // ---------------- CSV template download ----------------
+  function buildTemplateCSV(product, spec){
+    if(product.scoring === 'score'){
+      var lines = ["지표,합격기준,base,x0,slope"];
+      product.metrics.forEach(function(m){
+        var meta = METRIC_META[m], s = spec[m];
+        lines.push(meta.shortLabel+","+s.limit+","+s.base+","+s.x0+","+s.slope);
+      });
+      lines.push("총점기준,"+spec.totalThreshold+",,,");
+      return lines.join("\n")+"\n";
+    }
+    var lines2 = ["지표,합격기준"];
+    product.metrics.forEach(function(m){
+      var meta = METRIC_META[m], s = spec[m];
+      lines2.push(meta.shortLabel+","+s.limit);
+    });
+    return lines2.join("\n")+"\n";
+  }
+
   $('downloadTemplateBtn').addEventListener('click', function(){
-    var csv = "지표,합격기준,base,x0,slope\n" +
-      "관능평가,5,110,1,5\n" +
-      "Hexanal,400,110,150,0.1\n" +
-      "과산화물가,45,110,20,1\n" +
-      "총점기준,260,,,\n";
-    var blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+    var product = getProduct();
+    var csv = buildTemplateCSV(product, getSpec());
+    var blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8;"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = "평가기준_템플릿.csv";
+    a.href = url; a.download = product.label.replace(/[()]/g,'') + "_평가기준_템플릿.csv";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
@@ -911,36 +1001,38 @@
   }
 
   function handleSpecFile(file){
+    var product = getProduct();
     var reader = new FileReader();
     reader.onload = function(e){
       try{
-        var text = e.target.result.replace(/^\uFEFF/, '');
+        var text = e.target.result.replace(/^﻿/, '');
         var lines = text.split(/\r?\n/).filter(function(l){ return l.trim().length>0; });
-        var newSpec = defaultSpec();
+        var newSpec = cloneSpec(product.spec);
         lines.forEach(function(line, idx){
           if(idx===0 && /지표|metric/i.test(line)) return; // header
           var cols = parseCSVLine(line);
           var name = cols[0];
           var limit = parseFloat(cols[1]);
-          var base = parseFloat(cols[2]);
-          var x0 = parseFloat(cols[3]);
-          var slope = parseFloat(cols[4]);
-          if(/관능/.test(name)){
-            newSpec.sensory = {limit:limit, base:base||110, x0:x0||1, slope:slope||5};
-          } else if(/hexanal/i.test(name)){
-            newSpec.hexanal = {limit:limit, base:base||110, x0:x0||150, slope:slope||0.1};
-          } else if(/과산화|pov/i.test(name)){
-            newSpec.pov = {limit:limit, base:base||110, x0:x0||20, slope:slope||1};
-          } else if(/총점/.test(name)){
+          if(isNaN(limit)) return;
+          var matchedMetric = product.metrics.filter(function(m){ return METRIC_META[m].csvMatch.test(name); })[0];
+          if(matchedMetric){
+            newSpec[matchedMetric].limit = limit;
+            if(product.scoring === 'score'){
+              var base = parseFloat(cols[2]), x0 = parseFloat(cols[3]), slope = parseFloat(cols[4]);
+              if(!isNaN(base)) newSpec[matchedMetric].base = base;
+              if(!isNaN(x0)) newSpec[matchedMetric].x0 = x0;
+              if(!isNaN(slope)) newSpec[matchedMetric].slope = slope;
+            }
+          } else if(/총점/.test(name) && product.scoring === 'score'){
             newSpec.totalThreshold = limit;
           }
         });
-        state.spec = newSpec;
-        syncSpecInputsFromState();
+        state.specByProduct[product.key] = newSpec;
+        renderSpecTable();
         $('specStatusText').textContent = '업로드된 파일 기준 적용됨: ' + file.name;
         recomputeMeasureTable();
       }catch(err){
-        $('specStatusText').textContent = '파일 파싱 실패 — 템플릿 형식을 확인하세요 (지표,합격기준,base,x0,slope).';
+        $('specStatusText').textContent = '파일 파싱 실패 — 템플릿 형식을 확인하세요 (지표,합격기준[,base,x0,slope]).';
       }
     };
     reader.readAsText(file, 'UTF-8');
